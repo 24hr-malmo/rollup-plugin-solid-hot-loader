@@ -46,7 +46,8 @@ module.exports = (options = {}) => {
         let file = id.replace(loaderName, ""),
           code = readFileSync(file, "utf-8"),
           ast = JSXParser.parse(code, acornOpts),
-          namedExport = "";
+          namedExport = "",
+          otherNamedExports = "";
 
         simple(ast, {
           ExportDefaultDeclaration(node) {
@@ -54,16 +55,29 @@ module.exports = (options = {}) => {
           }
         });
 
+
+        simple(ast, {
+          ExportNamedDeclaration(node) {
+            const names = node.declaration.declarations.map(declaration => {
+              return declaration.id.name;
+            });
+            otherNamedExports += `, ${names[0]}`;// JSON.stringify(node.declarations)}`;
+          }
+        });
+
+        otherNamedExports = otherNamedExports.replace(/^,/, '');
+
+
         return `
           import { createSignal, untrack } from "solid-js";
-          import Comp from "${file}";
+          import Comp ${otherNamedExports ? ", { " + otherNamedExports + " } " : ""} from "${file}";
           const [s, set] = createSignal(Comp),
             Wrapped = props => {
               let c;
               return () => (c = s()) && untrack(() => c(props));
             };
 
-          export { Wrapped as default${namedExport} };
+          export { Wrapped as default${namedExport}, ${ namedExport } };
 
           module && module.hot && module.hot.accept(({disposed}) => {
             for(const id of disposed.filter(id => id != module.id)) {
