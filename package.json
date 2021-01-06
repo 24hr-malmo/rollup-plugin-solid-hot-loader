@@ -4,6 +4,7 @@
   "description": "rollup plugin to enable hot module replacement for solid-js components",
   "main": "dist/index.js",
   "scripts": {
+    "prepare": "npm run build",
     "build": "rollup -c"
   },
   "repository": {
