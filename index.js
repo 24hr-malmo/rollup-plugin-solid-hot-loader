@@ -55,7 +55,6 @@ module.exports = (options = {}) => {
           }
         });
 
-
         simple(ast, {
           ExportNamedDeclaration(node) {
             const names = node.declaration.declarations.map(declaration => {
@@ -67,7 +66,6 @@ module.exports = (options = {}) => {
 
         otherNamedExports = otherNamedExports.replace(/^,/, '');
 
-
         return `
           import { createSignal, untrack } from "solid-js";
           import Comp ${otherNamedExports ? ", { " + otherNamedExports + " } " : ""} from "${file}";
@@ -77,7 +75,7 @@ module.exports = (options = {}) => {
               return () => (c = s()) && untrack(() => c(props));
             };
 
-          export { Wrapped as default${namedExport}, ${ namedExport } };
+          export { Wrapped as default${namedExport}, ${ otherNamedExports } };
 
           module && module.hot && module.hot.accept(({disposed}) => {
             for(const id of disposed.filter(id => id != module.id)) {
