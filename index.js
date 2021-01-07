@@ -57,10 +57,12 @@ module.exports = (options = {}) => {
 
         simple(ast, {
           ExportNamedDeclaration(node) {
-            const names = node.declaration.declarations.map(declaration => {
-              return declaration.id.name;
-            });
-            otherNamedExports += `, ${names[0]}`;// JSON.stringify(node.declarations)}`;
+            if (node.declaration.declarations) {
+              const names = node.declaration.declarations.map(declaration => {
+                return declaration.id.name;
+              });
+              otherNamedExports += `, ${names[0]}`;
+            }
           }
         });
 
