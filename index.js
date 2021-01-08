@@ -68,24 +68,49 @@ module.exports = (options = {}) => {
 
         otherNamedExports = otherNamedExports.replace(/^,/, '');
 
-        return `
+        let exportAll = '';
+        let otherNamedExportsWithAliasImport = '';
+        let otherNamedExportsSet = '';
+
+        const otherNamedExportsCode = otherNamedExports.replace(/^,/, '').split(',').map(entry => {
+          const trimmed = entry.replace(/(^\s+|\s+$)/g, '');
+          if (!trimmed) {
+            return '';
+          }
+          const code = `
+            const [s${trimmed}, set${trimmed}] = createSignal(Comp${trimmed});
+            const Wrapped${trimmed} = (...args) => {
+              return Comp${trimmed}(...args);
+            };
+          `;
+          exportAll += `Wrapped${trimmed} as ${trimmed}, `;
+          otherNamedExportsWithAliasImport += `${trimmed} as Comp${trimmed}, `;
+          otherNamedExportsSet += `set${trimmed}(Comp${trimmed});`;
+          return code;
+        }).join('');
+
+        const result =  `
           import { createSignal, untrack } from "solid-js";
-          import Comp ${otherNamedExports ? ", { " + otherNamedExports + " } " : ""} from "${file}";
+          import Comp ${otherNamedExports ? ", { " + otherNamedExportsWithAliasImport + " } " : ""} from "${file}";
           const [s, set] = createSignal(Comp),
             Wrapped = props => {
               let c;
               return () => (c = s()) && untrack(() => c(props));
             };
 
-          export { Wrapped as default${namedExport}, ${ otherNamedExports } };
+          ${ otherNamedExportsCode }
+
+          export { Wrapped as default${namedExport}, ${ exportAll } };
 
           module && module.hot && module.hot.accept(({disposed}) => {
             for(const id of disposed.filter(id => id != module.id)) {
               require(id);
             }
             set(Comp);
+            ${otherNamedExportsSet}
           });
         `;
+        return result;
       }
 
       return null;
