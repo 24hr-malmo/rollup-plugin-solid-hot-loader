@@ -62,6 +62,8 @@ module.exports = (options = {}) => {
                 return declaration.id.name;
               });
               otherNamedExports += `, ${names[0]}`;
+            } else {
+              otherNamedExports += `, ${node.declaration.id.name}`;
             }
           }
         });
